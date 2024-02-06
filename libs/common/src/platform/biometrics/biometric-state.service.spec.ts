@@ -9,6 +9,7 @@ import { EncryptedString } from "../models/domain/enc-string";
 
 import { BiometricStateService, DefaultBiometricStateService } from "./biometric-state.service";
 import {
+  BIOMETRIC_UNLOCK_ENABLED,
   DISMISSED_REQUIRE_PASSWORD_ON_START_CALLOUT,
   ENCRYPTED_CLIENT_KEY_HALF,
   PROMPT_AUTOMATICALLY,
@@ -152,6 +153,49 @@ describe("BiometricStateService", () => {
       const nextMock = stateProvider.activeUser.getFake(PROMPT_AUTOMATICALLY).nextMock;
       expect(nextMock).toHaveBeenCalledWith([userId, true]);
       expect(nextMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("biometricUnlockEnabled$", () => {
+    it("should track the biometricUnlockEnabled state", async () => {
+      const state = stateProvider.activeUser.getFake(BIOMETRIC_UNLOCK_ENABLED);
+      state.nextState(undefined);
+
+      expect(await firstValueFrom(sut.biometricUnlockEnabled$)).toBe(false);
+
+      state.nextState(true);
+
+      expect(await firstValueFrom(sut.biometricUnlockEnabled$)).toBe(true);
+    });
+  });
+
+  describe("setBiometricUnlockEnabled", () => {
+    it("should update the biometricUnlockEnabled$", async () => {
+      await sut.setBiometricUnlockEnabled(true);
+
+      expect(await firstValueFrom(sut.biometricUnlockEnabled$)).toBe(true);
+    });
+
+    it("should update disk state", async () => {
+      await sut.setBiometricUnlockEnabled(true);
+
+      expect(
+        stateProvider.activeUser.getFake(BIOMETRIC_UNLOCK_ENABLED).nextMock,
+      ).toHaveBeenCalledWith([userId, true]);
+    });
+  });
+
+  describe("getBiometricUnlockEnabled", () => {
+    it("should return the biometricUnlockEnabled state for the given user", async () => {
+      stateProvider.singleUser.getFake(userId, BIOMETRIC_UNLOCK_ENABLED).nextState(true);
+
+      expect(await sut.getBiometricUnlockEnabled(userId)).toBe(true);
+    });
+
+    it("should return false if the state is not set", async () => {
+      stateProvider.singleUser.getFake(userId, BIOMETRIC_UNLOCK_ENABLED).nextState(undefined);
+
+      expect(await sut.getBiometricUnlockEnabled(userId)).toBe(false);
     });
   });
 });

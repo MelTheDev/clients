@@ -2,6 +2,7 @@ import { EncryptedString } from "../models/domain/enc-string";
 import { KeyDefinition } from "../state";
 
 import {
+  BIOMETRIC_UNLOCK_ENABLED,
   DISMISSED_REQUIRE_PASSWORD_ON_START_CALLOUT,
   ENCRYPTED_CLIENT_KEY_HALF,
   PROMPT_AUTOMATICALLY,
@@ -15,6 +16,7 @@ describe.each([
   [PROMPT_CANCELLED, true],
   [PROMPT_AUTOMATICALLY, true],
   [REQUIRE_PASSWORD_ON_START, true],
+  [BIOMETRIC_UNLOCK_ENABLED, true],
 ])(
   "deserializes state %s",
   (
