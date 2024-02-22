@@ -777,6 +777,7 @@ export default class MainBackground {
       systemUtilsServiceReloadCallback,
       this.stateService,
       this.vaultTimeoutSettingsService,
+      this.biometricStateService,
     );
 
     // Other fields

@@ -69,7 +69,7 @@ export function browserSession<TCtor extends Constructor<any>>(constructor: TCto
     }
 
     isMemoryStorageService(arg: any): arg is AbstractMemoryStorageService {
-      return arg.type != null && arg.type === AbstractMemoryStorageService.TYPE;
+      return arg?.type === AbstractMemoryStorageService.TYPE;
     }
   };
 }
