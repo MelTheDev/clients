@@ -22,7 +22,7 @@ export const REQUIRE_PASSWORD_ON_START = new KeyDefinition<boolean>(
   "requirePasswordOnStart",
   {
     deserializer: (value) => value,
-  }
+  },
 );
 
 /**

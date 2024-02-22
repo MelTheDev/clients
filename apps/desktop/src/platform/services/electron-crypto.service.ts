@@ -1,3 +1,5 @@
+import { firstValueFrom } from "rxjs";
+
 import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
 import { CryptoFunctionService } from "@bitwarden/common/platform/abstractions/crypto-function.service";
 import { EncryptService } from "@bitwarden/common/platform/abstractions/encrypt.service";

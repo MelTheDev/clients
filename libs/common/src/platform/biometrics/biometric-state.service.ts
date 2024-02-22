@@ -109,7 +109,7 @@ export class DefaultBiometricStateService implements BiometricStateService {
   constructor(private stateProvider: StateProvider) {
     this.biometricUnlockEnabledState = this.stateProvider.getActive(BIOMETRIC_UNLOCK_ENABLED);
     this.biometricUnlockEnabled$ = this.biometricUnlockEnabledState.state$.pipe(map(booleanState));
-    
+
     this.requirePasswordOnStartState = this.stateProvider.getActive(REQUIRE_PASSWORD_ON_START);
     this.requirePasswordOnStart$ = this.requirePasswordOnStartState.state$.pipe(
       map((value) => !!value),
