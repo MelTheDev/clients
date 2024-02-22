@@ -67,6 +67,7 @@ import {
   AbstractMemoryStorageService,
   AbstractStorageService,
 } from "@bitwarden/common/platform/abstractions/storage.service";
+import { BiometricStateService } from "@bitwarden/common/platform/biometrics/biometric-state.service";
 import { StateFactory } from "@bitwarden/common/platform/factories/state-factory";
 import { GlobalState } from "@bitwarden/common/platform/models/domain/global-state";
 import { ConfigService } from "@bitwarden/common/platform/services/config/config.service";
@@ -268,6 +269,7 @@ function getBgService<T>(service: keyof MainBackground) {
         stateService: StateServiceAbstraction,
         accountService: AccountServiceAbstraction,
         stateProvider: StateProvider,
+        biometricStateService: BiometricStateService,
       ) => {
         const cryptoService = new BrowserCryptoService(
           cryptoFunctionService,
@@ -277,6 +279,7 @@ function getBgService<T>(service: keyof MainBackground) {
           stateService,
           accountService,
           stateProvider,
+          biometricStateService,
         );
         new ContainerService(cryptoService, encryptService).attachToGlobal(self);
         return cryptoService;
@@ -289,6 +292,7 @@ function getBgService<T>(service: keyof MainBackground) {
         StateServiceAbstraction,
         AccountServiceAbstraction,
         StateProvider,
+        BiometricStateService,
       ],
     },
     {
