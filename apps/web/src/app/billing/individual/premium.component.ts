@@ -1,14 +1,15 @@
-import { Component, OnInit, ViewChild } from "@angular/core";
+import { Component, OnDestroy, OnInit, ViewChild } from "@angular/core";
 import { Router } from "@angular/router";
+import { firstValueFrom, Subject, takeUntil } from "rxjs";
 
 import { ApiService } from "@bitwarden/common/abstractions/api.service";
 import { TokenService } from "@bitwarden/common/auth/abstractions/token.service";
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 import { EnvironmentService } from "@bitwarden/common/platform/abstractions/environment.service";
 import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { LogService } from "@bitwarden/common/platform/abstractions/log.service";
 import { MessagingService } from "@bitwarden/common/platform/abstractions/messaging.service";
 import { PlatformUtilsService } from "@bitwarden/common/platform/abstractions/platform-utils.service";
-import { StateService } from "@bitwarden/common/platform/abstractions/state.service";
 import { SyncService } from "@bitwarden/common/vault/abstractions/sync/sync.service.abstraction";
 
 import { PaymentComponent, TaxInfoComponent } from "../shared";
@@ -16,7 +17,7 @@ import { PaymentComponent, TaxInfoComponent } from "../shared";
 @Component({
   templateUrl: "premium.component.html",
 })
-export class PremiumComponent implements OnInit {
+export class PremiumComponent implements OnInit, OnDestroy {
   @ViewChild(PaymentComponent) paymentComponent: PaymentComponent;
   @ViewChild(TaxInfoComponent) taxInfoComponent: TaxInfoComponent;
 
@@ -30,6 +31,8 @@ export class PremiumComponent implements OnInit {
 
   formPromise: Promise<any>;
 
+  private componentIsDestroyed$ = new Subject<boolean>();
+
   constructor(
     private apiService: ApiService,
     private i18nService: I18nService,
@@ -39,22 +42,31 @@ export class PremiumComponent implements OnInit {
     private messagingService: MessagingService,
     private syncService: SyncService,
     private logService: LogService,
-    private stateService: StateService,
     private environmentService: EnvironmentService,
+    private billingAccountProfileStateService: BillingAccountProfileStateServiceAbstraction,
   ) {
     this.selfHosted = platformUtilsService.isSelfHost();
     this.cloudWebVaultUrl = this.environmentService.getCloudWebVaultUrl();
   }
 
   async ngOnInit() {
-    this.canAccessPremium = await this.stateService.getCanAccessPremium();
-    const premiumPersonally = await this.stateService.getHasPremiumPersonally();
-    if (premiumPersonally) {
+    this.billingAccountProfileStateService.canAccessPremium$
+      .pipe(takeUntil(this.componentIsDestroyed$))
+      .subscribe((canAccessPremium: boolean) => {
+        this.canAccessPremium = canAccessPremium;
+      });
+
+    if (await firstValueFrom(this.billingAccountProfileStateService.hasPremiumPersonally$)) {
       // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       this.router.navigate(["/settings/subscription/user-subscription"]);
       return;
     }
+  }
+
+  ngOnDestroy() {
+    this.componentIsDestroyed$.next(true);
+    this.componentIsDestroyed$.complete();
   }
 
   async submit() {
