@@ -5,9 +5,10 @@ import {
   Router,
   CanActivateFn,
 } from "@angular/router";
+import { firstValueFrom } from "rxjs";
 
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 import { MessagingService } from "@bitwarden/common/platform/abstractions/messaging.service";
-import { StateService } from "@bitwarden/common/platform/abstractions/state.service";
 
 /**
  * CanActivate guard that checks if the user has premium and otherwise triggers the "premiumRequired"
@@ -16,10 +17,12 @@ import { StateService } from "@bitwarden/common/platform/abstractions/state.serv
 export function hasPremiumGuard(): CanActivateFn {
   return async (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
     const router = inject(Router);
-    const stateService = inject(StateService);
     const messagingService = inject(MessagingService);
+    const billingAccountProfileStateService = inject(BillingAccountProfileStateServiceAbstraction);
 
-    const userHasPremium = await stateService.getCanAccessPremium();
+    const userHasPremium = await firstValueFrom(
+      billingAccountProfileStateService.canAccessPremium$,
+    );
 
     if (!userHasPremium) {
       messagingService.send("premiumRequired");
