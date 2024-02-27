@@ -1,6 +1,8 @@
-import { Directive, EventEmitter, Input, OnInit, Output } from "@angular/core";
+import { Directive, EventEmitter, Input, OnDestroy, OnInit, Output } from "@angular/core";
+import { Subject, takeUntil } from "rxjs";
 
 import { ApiService } from "@bitwarden/common/abstractions/api.service";
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 import { ErrorResponse } from "@bitwarden/common/models/response/error.response";
 import { CryptoService } from "@bitwarden/common/platform/abstractions/crypto.service";
 import { FileDownloadService } from "@bitwarden/common/platform/abstractions/file-download/file-download.service";
@@ -16,11 +18,13 @@ import { CipherView } from "@bitwarden/common/vault/models/view/cipher.view";
 import { DialogService } from "@bitwarden/components";
 
 @Directive()
-export class AttachmentsComponent implements OnInit {
+export class AttachmentsComponent implements OnInit, OnDestroy {
   @Input() cipherId: string;
   @Output() onUploadedAttachment = new EventEmitter();
   @Output() onDeletedAttachment = new EventEmitter();
   @Output() onReuploadedAttachment = new EventEmitter();
+
+  private componentIsDestroyed$ = new Subject<boolean>();
 
   cipher: CipherView;
   cipherDomain: Cipher;
@@ -42,10 +46,16 @@ export class AttachmentsComponent implements OnInit {
     protected stateService: StateService,
     protected fileDownloadService: FileDownloadService,
     protected dialogService: DialogService,
+    protected billingAccountProfileStateService: BillingAccountProfileStateServiceAbstraction,
   ) {}
 
   async ngOnInit() {
     await this.init();
+  }
+
+  ngOnDestroy() {
+    this.componentIsDestroyed$.next(true);
+    this.componentIsDestroyed$.complete();
   }
 
   async submit() {
@@ -185,8 +195,11 @@ export class AttachmentsComponent implements OnInit {
       await this.cipherService.getKeyForCipherKeyDecryption(this.cipherDomain),
     );
 
-    const canAccessPremium = await this.stateService.getCanAccessPremium();
-    this.canAccessAttachments = canAccessPremium || this.cipher.organizationId != null;
+    this.billingAccountProfileStateService.canAccessPremium$
+      .pipe(takeUntil(this.componentIsDestroyed$))
+      .subscribe((canAccessPremium: boolean) => {
+        this.canAccessAttachments = canAccessPremium || this.cipher.organizationId != null;
+      });
 
     if (!this.canAccessAttachments) {
       const confirmed = await this.dialogService.openSimpleDialog({
