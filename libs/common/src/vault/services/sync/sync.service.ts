@@ -12,6 +12,7 @@ import { ProviderData } from "../../../admin-console/models/data/provider.data";
 import { PolicyResponse } from "../../../admin-console/models/response/policy.response";
 import { KeyConnectorService } from "../../../auth/abstractions/key-connector.service";
 import { ForceSetPasswordReason } from "../../../auth/models/domain/force-set-password-reason";
+import { BillingAccountProfileStateServiceAbstraction } from "../../../billing/abstractions/account/billing-account-profile-state.service.abstraction";
 import { DomainsResponse } from "../../../models/response/domains.response";
 import {
   SyncCipherNotification,
@@ -79,6 +80,7 @@ export class SyncService implements SyncServiceAbstraction {
     private sendApiService: SendApiService,
     private stateProvider: StateProvider,
     private logoutCallback: (expired: boolean) => Promise<void>,
+    private billingAccountProfileStateService: BillingAccountProfileStateServiceAbstraction,
   ) {}
 
   async getLastSync(): Promise<Date | null> {
@@ -118,7 +120,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     try {
       await this.apiService.refreshIdentityToken();
-      const response = await this.apiService.getSync();
+      const response = await this.apiService.getSync(); // this is where premium stuff is coming from. can't separate out into my own service
 
       await this.syncProfile(response.profile);
       await this.syncFolders(response.folders);
@@ -326,8 +328,12 @@ export class SyncService implements SyncServiceAbstraction {
     await this.stateService.setAvatarColor(response.avatarColor);
     await this.stateService.setSecurityStamp(response.securityStamp);
     await this.stateService.setEmailVerified(response.emailVerified);
-    await this.stateService.setHasPremiumPersonally(response.premiumPersonally);
-    await this.stateService.setHasPremiumFromOrganization(response.premiumFromOrganization);
+    await this.billingAccountProfileStateService.setHasPremiumPersonally(
+      response.premiumPersonally,
+    );
+    await this.billingAccountProfileStateService.setHasPremiumFromOrganization(
+      response.premiumFromOrganization,
+    );
     await this.keyConnectorService.setUsesKeyConnector(response.usesKeyConnector);
 
     await this.setForceSetPasswordReasonIfNeeded(response);

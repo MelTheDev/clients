@@ -1,6 +1,7 @@
-import { Directive, OnInit, TemplateRef, ViewContainerRef } from "@angular/core";
+import { Directive, OnDestroy, OnInit, TemplateRef, ViewContainerRef } from "@angular/core";
+import { Subject, takeUntil } from "rxjs";
 
-import { StateService } from "@bitwarden/common/platform/abstractions/state.service";
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 
 /**
  * Hides the element if the user has premium.
@@ -8,20 +9,29 @@ import { StateService } from "@bitwarden/common/platform/abstractions/state.serv
 @Directive({
   selector: "[appNotPremium]",
 })
-export class NotPremiumDirective implements OnInit {
+export class NotPremiumDirective implements OnInit, OnDestroy {
+  private componentIsDestroyed$ = new Subject<boolean>();
+
   constructor(
     private templateRef: TemplateRef<any>,
     private viewContainer: ViewContainerRef,
-    private stateService: StateService,
+    private billingAccountProfileStateService: BillingAccountProfileStateServiceAbstraction,
   ) {}
 
   async ngOnInit(): Promise<void> {
-    const premium = await this.stateService.getCanAccessPremium();
+    this.billingAccountProfileStateService.canAccessPremium$
+      .pipe(takeUntil(this.componentIsDestroyed$))
+      .subscribe((premium: boolean) => {
+        if (premium) {
+          this.viewContainer.clear();
+        } else {
+          this.viewContainer.createEmbeddedView(this.templateRef);
+        }
+      });
+  }
 
-    if (premium) {
-      this.viewContainer.clear();
-    } else {
-      this.viewContainer.createEmbeddedView(this.templateRef);
-    }
+  async ngOnDestroy() {
+    this.componentIsDestroyed$.next(true);
+    this.componentIsDestroyed$.complete();
   }
 }

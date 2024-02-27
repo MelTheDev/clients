@@ -90,9 +90,11 @@ import {
   BadgeSettingsServiceAbstraction,
   BadgeSettingsService,
 } from "@bitwarden/common/autofill/services/badge-settings.service";
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 import { BillingApiServiceAbstraction } from "@bitwarden/common/billing/abstractions/billilng-api.service.abstraction";
 import { BillingBannerServiceAbstraction } from "@bitwarden/common/billing/abstractions/billing-banner.service.abstraction";
 import { OrganizationBillingServiceAbstraction } from "@bitwarden/common/billing/abstractions/organization-billing.service";
+import { BillingAccountProfileStateService } from "@bitwarden/common/billing/services/account/billing-account-profile-state.service";
 import { BillingApiService } from "@bitwarden/common/billing/services/billing-api.service";
 import { BillingBannerService } from "@bitwarden/common/billing/services/billing-banner.service";
 import { OrganizationBillingService } from "@bitwarden/common/billing/services/organization-billing.service";
@@ -924,6 +926,11 @@ import { ModalService } from "./modal.service";
       provide: BillingBannerServiceAbstraction,
       useClass: BillingBannerService,
       deps: [StateProvider],
+    },
+    {
+      provide: BillingAccountProfileStateServiceAbstraction,
+      useClass: BillingAccountProfileStateService,
+      deps: [ActiveUserStateProvider],
     },
     {
       provide: OrganizationBillingServiceAbstraction,

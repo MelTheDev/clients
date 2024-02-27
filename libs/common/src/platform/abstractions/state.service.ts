@@ -76,11 +76,6 @@ export abstract class StateService<T extends Account = Account> {
   setBiometricFingerprintValidated: (value: boolean, options?: StorageOptions) => Promise<void>;
   getBiometricUnlock: (options?: StorageOptions) => Promise<boolean>;
   setBiometricUnlock: (value: boolean, options?: StorageOptions) => Promise<void>;
-  getCanAccessPremium: (options?: StorageOptions) => Promise<boolean>;
-  getHasPremiumPersonally: (options?: StorageOptions) => Promise<boolean>;
-  setHasPremiumPersonally: (value: boolean, options?: StorageOptions) => Promise<void>;
-  setHasPremiumFromOrganization: (value: boolean, options?: StorageOptions) => Promise<void>;
-  getHasPremiumFromOrganization: (options?: StorageOptions) => Promise<boolean>;
   getConvertAccountToKeyConnector: (options?: StorageOptions) => Promise<boolean>;
   setConvertAccountToKeyConnector: (value: boolean, options?: StorageOptions) => Promise<void>;
   /**
