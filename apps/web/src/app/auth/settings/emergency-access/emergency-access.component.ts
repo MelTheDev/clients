@@ -1,8 +1,10 @@
-import { Component, OnInit, ViewChild, ViewContainerRef } from "@angular/core";
+import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from "@angular/core";
+import { Subject, takeUntil } from "rxjs";
 
 import { UserNamePipe } from "@bitwarden/angular/pipes/user-name.pipe";
 import { ModalService } from "@bitwarden/angular/services/modal.service";
 import { OrganizationService } from "@bitwarden/common/admin-console/abstractions/organization/organization.service.abstraction";
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { LogService } from "@bitwarden/common/platform/abstractions/log.service";
 import { MessagingService } from "@bitwarden/common/platform/abstractions/messaging.service";
@@ -27,7 +29,7 @@ import { EmergencyAccessTakeoverComponent } from "./takeover/emergency-access-ta
   templateUrl: "emergency-access.component.html",
 })
 // eslint-disable-next-line rxjs-angular/prefer-takeuntil
-export class EmergencyAccessComponent implements OnInit {
+export class EmergencyAccessComponent implements OnInit, OnDestroy {
   @ViewChild("addEdit", { read: ViewContainerRef, static: true }) addEditModalRef: ViewContainerRef;
   @ViewChild("takeoverTemplate", { read: ViewContainerRef, static: true })
   takeoverModalRef: ViewContainerRef;
@@ -43,6 +45,8 @@ export class EmergencyAccessComponent implements OnInit {
   actionPromise: Promise<any>;
   isOrganizationOwner: boolean;
 
+  private componentIsDestroyed$ = new Subject<boolean>();
+
   constructor(
     private emergencyAccessService: EmergencyAccessService,
     private i18nService: I18nService,
@@ -54,15 +58,26 @@ export class EmergencyAccessComponent implements OnInit {
     private stateService: StateService,
     private organizationService: OrganizationService,
     protected dialogService: DialogService,
+    private billingAccountProfileStateService: BillingAccountProfileStateServiceAbstraction,
   ) {}
 
   async ngOnInit() {
-    this.canAccessPremium = await this.stateService.getCanAccessPremium();
+    this.billingAccountProfileStateService.canAccessPremium$
+      .pipe(takeUntil(this.componentIsDestroyed$))
+      .subscribe((canAccessPremium: boolean) => {
+        this.canAccessPremium = canAccessPremium;
+      });
+
     const orgs = await this.organizationService.getAll();
     this.isOrganizationOwner = orgs.some((o) => o.isOwner);
     // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     this.load();
+  }
+
+  ngOnDestroy() {
+    this.componentIsDestroyed$.next(true);
+    this.componentIsDestroyed$.complete();
   }
 
   async load() {
