@@ -9,9 +9,9 @@ import { PolicyType } from "@bitwarden/common/admin-console/enums";
 import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
 import { TwoFactorProviderType } from "@bitwarden/common/auth/enums/two-factor-provider-type";
 import { TwoFactorProviders } from "@bitwarden/common/auth/services/two-factor.service";
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 import { ProductType } from "@bitwarden/common/enums";
 import { MessagingService } from "@bitwarden/common/platform/abstractions/messaging.service";
-import { StateService } from "@bitwarden/common/platform/abstractions/state.service";
 
 import { TwoFactorAuthenticatorComponent } from "./two-factor-authenticator.component";
 import { TwoFactorDuoComponent } from "./two-factor-duo.component";
@@ -56,11 +56,15 @@ export class TwoFactorSetupComponent implements OnInit, OnDestroy {
     protected modalService: ModalService,
     protected messagingService: MessagingService,
     protected policyService: PolicyService,
-    private stateService: StateService,
+    private billingAccountProfileStateService: BillingAccountProfileStateServiceAbstraction,
   ) {}
 
   async ngOnInit() {
-    this.canAccessPremium = await this.stateService.getCanAccessPremium();
+    this.billingAccountProfileStateService.canAccessPremium$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((canAccessPremium: boolean) => {
+        this.canAccessPremium = canAccessPremium;
+      });
 
     for (const key in TwoFactorProviders) {
       // eslint-disable-next-line
