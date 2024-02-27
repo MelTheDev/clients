@@ -10,7 +10,7 @@ import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/
   selector: "[appNotPremium]",
 })
 export class NotPremiumDirective implements OnInit, OnDestroy {
-  private componentIsDestroyed$ = new Subject<boolean>();
+  private directiveIsDestroyed$ = new Subject<boolean>();
 
   constructor(
     private templateRef: TemplateRef<any>,
@@ -20,7 +20,7 @@ export class NotPremiumDirective implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.billingAccountProfileStateService.canAccessPremium$
-      .pipe(takeUntil(this.componentIsDestroyed$))
+      .pipe(takeUntil(this.directiveIsDestroyed$))
       .subscribe((premium: boolean) => {
         if (premium) {
           this.viewContainer.clear();
@@ -31,7 +31,7 @@ export class NotPremiumDirective implements OnInit, OnDestroy {
   }
 
   async ngOnDestroy() {
-    this.componentIsDestroyed$.next(true);
-    this.componentIsDestroyed$.complete();
+    this.directiveIsDestroyed$.next(true);
+    this.directiveIsDestroyed$.complete();
   }
 }
