@@ -1,6 +1,7 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Subject, takeUntil } from "rxjs";
 
-import { StateService } from "@bitwarden/common/platform/abstractions/state.service";
+import { BillingAccountProfileStateServiceAbstraction } from "@bitwarden/common/billing/abstractions/account/billing-account-profile-state.service.abstraction";
 
 import { reports, ReportType } from "../reports";
 import { ReportEntry, ReportVariant } from "../shared";
@@ -9,43 +10,53 @@ import { ReportEntry, ReportVariant } from "../shared";
   selector: "app-reports-home",
   templateUrl: "reports-home.component.html",
 })
-export class ReportsHomeComponent implements OnInit {
+export class ReportsHomeComponent implements OnInit, OnDestroy {
+  private componentIsDestroyed$ = new Subject<boolean>();
   reports: ReportEntry[];
 
-  constructor(private stateService: StateService) {}
+  constructor(
+    private billingAccountProfileStateService: BillingAccountProfileStateServiceAbstraction,
+  ) {}
 
   async ngOnInit(): Promise<void> {
-    const userHasPremium = await this.stateService.getCanAccessPremium();
+    this.billingAccountProfileStateService.canAccessPremium$
+      .pipe(takeUntil(this.componentIsDestroyed$))
+      .subscribe((userHasPremium: boolean) => {
+        const reportRequiresPremium = userHasPremium
+          ? ReportVariant.Enabled
+          : ReportVariant.RequiresPremium;
 
-    const reportRequiresPremium = userHasPremium
-      ? ReportVariant.Enabled
-      : ReportVariant.RequiresPremium;
+        this.reports = [
+          {
+            ...reports[ReportType.ExposedPasswords],
+            variant: reportRequiresPremium,
+          },
+          {
+            ...reports[ReportType.ReusedPasswords],
+            variant: reportRequiresPremium,
+          },
+          {
+            ...reports[ReportType.WeakPasswords],
+            variant: reportRequiresPremium,
+          },
+          {
+            ...reports[ReportType.UnsecuredWebsites],
+            variant: reportRequiresPremium,
+          },
+          {
+            ...reports[ReportType.Inactive2fa],
+            variant: reportRequiresPremium,
+          },
+          {
+            ...reports[ReportType.DataBreach],
+            variant: ReportVariant.Enabled,
+          },
+        ];
+      });
+  }
 
-    this.reports = [
-      {
-        ...reports[ReportType.ExposedPasswords],
-        variant: reportRequiresPremium,
-      },
-      {
-        ...reports[ReportType.ReusedPasswords],
-        variant: reportRequiresPremium,
-      },
-      {
-        ...reports[ReportType.WeakPasswords],
-        variant: reportRequiresPremium,
-      },
-      {
-        ...reports[ReportType.UnsecuredWebsites],
-        variant: reportRequiresPremium,
-      },
-      {
-        ...reports[ReportType.Inactive2fa],
-        variant: reportRequiresPremium,
-      },
-      {
-        ...reports[ReportType.DataBreach],
-        variant: ReportVariant.Enabled,
-      },
-    ];
+  ngOnDestroy(): void {
+    this.componentIsDestroyed$.next(true);
+    this.componentIsDestroyed$.complete();
   }
 }
